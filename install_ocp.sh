@@ -387,8 +387,8 @@ create_or_delete_openshift_resource() {
     local result
 
     set +e
-    local url="https://raw.githubusercontent.com/syndesisio/fuse-online-install/${TAG}/${resource}"
-    #local url="./${resource}"
+    #local url="https://raw.githubusercontent.com/syndesisio/fuse-online-install/${TAG}/${resource}"
+    local url="./${resource}"
     result=$(oc $what -f $url >$ERROR_FILE 2>&1)
     if [ $? -ne 0 ]; then
         echo "ERROR: Cannot create remote resource $url"
@@ -524,12 +524,15 @@ get_route() {
 
 # ==================================================================
 
-# Default Camel-K version
-CAMEL_K_DEFAULT_VERSION="0.2.0"
+# Getting options from config file
+eval $(source $(dirname ARGS[0])/fuse_online_config.sh; echo MAVEN_REPOSITORY=$maven_repository)
+eval $(source $(dirname ARGS[0])/fuse_online_config.sh; echo CAMEL_K_TAG=$tag_camel_k)
+eval $(source $(dirname ARGS[0])/fuse_online_config.sh; echo REPOSITORY=$repository)
+eval $(source $(dirname ARGS[0])/fuse_online_config.sh; echo REGISTRY=$registry)
 
 # Deploy Camel-K operator
 deploy_camel_k_operator() {
-  local version=${1:-$CAMEL_K_DEFAULT_VERSION}
+  local version=${1:-}
   local project=${2:-}
   local opts=${3:-}
   local extra_opts=""
@@ -540,7 +543,7 @@ deploy_camel_k_operator() {
     extra_opts="$extra_opts $opts"
   fi
   local kamel=$(get_camel_k_bin "$version")
-  $kamel install --skip-cluster-setup --context jvm $extra_opts
+  $kamel install --skip-cluster-setup --repository $MAVEN_REPOSITORY --context jvm $extra_opts
 
   if [ -z "$version" ]; then
     # Patching Camel K image
@@ -553,7 +556,7 @@ deploy_camel_k_operator() {
 
 # Install Camel-K CRD
 install_camel_k_crds() {
-  local version=${1:-$CAMEL_K_DEFAULT_VERSION}
+  local version=${1:-}
   local kamel=$(get_camel_k_bin "$version")
   $kamel install --cluster-setup
 }
@@ -582,11 +585,19 @@ isWindows() {
     fi
 }
 
-# Download `kamel` cli
-# TODO: Adapt this for the productised version of Camel-K
-# Currently it just download from GitHub
 get_camel_k_bin() {
-  local version=${1:-$CAMEL_K_DEFAULT_VERSION}
+    local version=${1:-}
+    if [ -n "$version" ]; then
+        get_upstream_camel_k_bin "$version"
+    else
+        get_product_camel_k_bin
+    fi
+}
+
+# Download upstream `kamel` cli
+# Currently it just download from GitHub
+get_upstream_camel_k_bin() {
+  local version=${1}
   local bin_dir=${2:-/tmp}
 
   local kamel_command="$bin_dir/kamel-${version}"
@@ -612,6 +623,40 @@ get_camel_k_bin() {
   tar xf $archive
   mv ./kamel $kamel_command
   popd >/dev/null
+  [ -n "$tmp_dir" ] && [ -d "$tmp_dir" ] && rm -rf $tmp_dir
+  echo $kamel_command
+}
+
+# Get productized `kamel` cli
+get_product_camel_k_bin() {
+  local bin_dir=${2:-/tmp}
+  local tmp_dir=${bin_dir}/fuse-online-tmp-camel-k-client
+  mkdir -p $tmp_dir
+  chmod a+rw $tmp_dir
+
+  local image=$REGISTRY/$REPOSITORY/fuse-camel-k:$CAMEL_K_TAG
+  local image_sha=$(docker inspect $image --format='{{index .RepoDigests 0}}' | sed 's/.*\://')
+
+  local kamel_command="$bin_dir/kamel-prod-$image_sha"
+  if [ -e $kamel_command ]; then
+    echo $kamel_command
+    return
+  fi
+
+  # Check for proper operating system
+  local os="linux"
+  if $(isMacOs); then
+    os="mac"
+  elif $(isWindows); then
+    os="windows"
+  fi
+
+  docker run -v $tmp_dir/:/client \
+                 --entrypoint bash \
+                 $REGISTRY/$REPOSITORY/fuse-camel-k:$CAMEL_K_TAG\
+                 -c "tar xf /opt/clients/camel-k-client-$os.tar.gz; cp kamel /client/"
+
+  mv -f $tmp_dir/kamel $kamel_command
   [ -n "$tmp_dir" ] && [ -d "$tmp_dir" ] && rm -rf $tmp_dir
   echo $kamel_command
 }

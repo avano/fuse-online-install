@@ -2869,7 +2869,7 @@ objects:
     tags:
     - from:
         kind: DockerImage
-        name: brew-pulp-docker01.web.prod.ext.phx2.redhat.com:8888/fuse7/fuse-ignite-server:1.4-2
+        name: quay.io/rh_integration/fuse-ignite-server:1.4-11
       importPolicy:
         scheduled: true
       name: "1.7"
@@ -2887,7 +2887,7 @@ objects:
     tags:
     - from:
         kind: DockerImage
-        name: brew-pulp-docker01.web.prod.ext.phx2.redhat.com:8888/fuse7/fuse-ignite-ui:1.4-1
+        name: quay.io/rh_integration/fuse-ignite-ui:1.4-4
       importPolicy:
         scheduled: true
       name: "1.7"
@@ -2905,7 +2905,7 @@ objects:
     tags:
     - from:
         kind: DockerImage
-        name: brew-pulp-docker01.web.prod.ext.phx2.redhat.com:8888/fuse7/fuse-ignite-meta:1.4-1
+        name: quay.io/rh_integration/fuse-ignite-meta:1.4-10
       importPolicy:
         scheduled: true
       name: "1.7"
@@ -2955,7 +2955,7 @@ objects:
     tags:
     - from:
         kind: DockerImage
-        name: brew-pulp-docker01.web.prod.ext.phx2.redhat.com:8888/fuse7/fuse-ignite-s2i:1.4-1
+        name: quay.io/rh_integration/fuse-ignite-s2i:1.4-10
       importPolicy:
         scheduled: true
       name: "1.7"
@@ -2974,7 +2974,7 @@ objects:
     tags:
       - from:
           kind: DockerImage
-          name: brew-pulp-docker01.web.prod.ext.phx2.redhat.com:8888/fuse7-tech-preview/fuse-postgres-exporter:1.4-1
+          name: quay.io/rh_integration/fuse-postgres-exporter:1.4-3
         importPolicy:
           scheduled: true
         name: "v0.4.7"
@@ -2992,7 +2992,7 @@ objects:
     tags:
     - from:
         kind: DockerImage
-        name: brew-pulp-docker01.web.prod.ext.phx2.redhat.com:8888/fuse7-tech-preview/data-virtualization-server:1.4-4
+        name: quay.io/rh_integration/data-virtualization-server:1.4-7
       importPolicy:
         scheduled: true
       name: "1.7"
